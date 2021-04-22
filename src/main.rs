@@ -34,10 +34,15 @@ impl EventHandler for Handler {
             let content: Vec<&str> = msg.content.split(ROLL_COMMAND).collect();
             let input_str = String::from(content[1]);
             println!("{}", input_str);
-            let roll = eval(&input_str);
-            match roll {
+            let result = eval(&input_str);
+            match result {
                 Ok(s) => {
-                    let response = format!("```yaml\n{} = {}```", s.str, s.value);
+                    let mut response = String::from("```yaml\n");
+                    for res in s {
+                        response.push_str(format!("{} = {}\n", res.str, res.value).as_str());
+                    }
+                    response.push_str("```");
+
                     if let Err(why) = msg.channel_id.say(&ctx.http, response).await {
                         println!("Error sending message: {:?}", why);
                     }
