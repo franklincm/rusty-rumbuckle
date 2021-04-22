@@ -142,9 +142,9 @@ dependencies = [
 
 [[package]]
 name = "dicer"
-version = "0.2.2"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "484d1eac42ef0f1eb01a348d340f7a95e60919de237aab403b423af42051d4a9"
+checksum = "91cd01a6e69650b96565ef44ea3428ff4424bdc8cdb40aebee54aacd0ccb63e3"
 dependencies = [
  "rand 0.8.3",
 ]
