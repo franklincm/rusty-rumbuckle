@@ -18,7 +18,7 @@ const ROLL_COMMAND: &str = "!d";
 struct RollHistory;
 
 impl TypeMapKey for RollHistory {
-    type Value = HashMap<String, String>;
+    type Value = HashMap<String, Vec<String>>;
 }
 
 async fn reg(ctx: &Context, name: &String, expr: &String) {
@@ -26,8 +26,8 @@ async fn reg(ctx: &Context, name: &String, expr: &String) {
     let history = data.get_mut::<RollHistory>().unwrap();
     let entry = history
         .entry(name.to_string())
-        .or_insert(String::from("test"));
-    *entry = String::from(expr);
+        .or_insert(Vec::new());
+    entry.push(String::from(expr));
 }
 
 struct Handler;
@@ -72,7 +72,7 @@ impl EventHandler for Handler {
             let history = data.get::<RollHistory>().unwrap();
             let entry = history.get(&author);
             match entry {
-                Some(lookup) => println!("HISTORY: {} = {}", author, lookup),
+                Some(lookup) => println!("HISTORY: {} = {}", author, lookup[0]),
                 None => (),
             }
         }
