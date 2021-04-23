@@ -1,11 +1,5 @@
-/*
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
 use dicer::eval;
+use std::collections::HashMap;
 use std::env;
 
 use serenity::{
@@ -21,6 +15,21 @@ bah humbug...
 const HELP_COMMAND: &str = "!rusty";
 const ROLL_COMMAND: &str = "!d";
 
+struct RollHistory;
+
+impl TypeMapKey for RollHistory {
+    type Value = HashMap<String, String>;
+}
+
+async fn reg(ctx: &Context, name: &String, expr: &String) {
+    let mut data = ctx.data.write().await;
+    let history = data.get_mut::<RollHistory>().unwrap();
+    let entry = history
+        .entry(name.to_string())
+        .or_insert(String::from("test"));
+    *entry = String::from(expr);
+}
+
 struct Handler;
 
 #[async_trait]
@@ -31,9 +40,14 @@ impl EventHandler for Handler {
                 println!("Error sending message: {:?}", why);
             }
         } else if msg.content.starts_with(ROLL_COMMAND) {
+            let author = msg.author.name;
+
             let content: Vec<&str> = msg.content.split(ROLL_COMMAND).collect();
             let input_str = String::from(content[1]);
-            println!("{}", input_str);
+            println!("{} : {}", author, input_str);
+
+            reg(&ctx, &author, &input_str).await;
+
             let result = eval(&input_str);
             match result {
                 Ok(s) => {
@@ -53,6 +67,14 @@ impl EventHandler for Handler {
                     }
                 }
             }
+
+            let data = ctx.data.read().await;
+            let history = data.get::<RollHistory>().unwrap();
+            let entry = history.get(&author);
+            match entry {
+                Some(lookup) => println!("HISTORY: {} = {}", author, lookup),
+                None => (),
+            }
         }
     }
 
@@ -69,6 +91,11 @@ async fn main() {
         .event_handler(Handler)
         .await
         .expect("Err creating client");
+
+    {
+        let mut data = client.data.write().await;
+        data.insert::<RollHistory>(HashMap::default());
+    }
 
     if let Err(why) = client.start().await {
         println!("Client error: {:?}", why);
