@@ -37,6 +37,26 @@ async fn reg(ctx: &Context, name: &String, expr: &String) {
     }
 }
 
+async fn history_command(ctx: &Context, msg: &Message) {
+    let author = &msg.author.name;
+    let data = ctx.data.read().await;
+    let history = data.get::<RollHistory>().unwrap();
+    let entry = history.get(author);
+    match entry {
+        Some(user_rolls) => {
+            let mut response = String::from("```yaml\n");
+            for (pos, roll) in user_rolls.iter().enumerate() {
+                response.push_str(format!("{}: {}\n", pos + 1, roll).as_str());
+            }
+            response.push_str("```");
+            if let Err(why) = &msg.channel_id.say(&ctx.http, response).await {
+                println!("Error sending message: {:?}", why);
+            }
+        }
+        None => (),
+    }
+}
+
 struct Handler;
 
 #[async_trait]
@@ -74,18 +94,6 @@ impl EventHandler for Handler {
                     }
                 }
             }
-
-            let data = ctx.data.read().await;
-            let history = data.get::<RollHistory>().unwrap();
-            let entry = history.get(&author);
-            match entry {
-                Some(user_rolls) => {
-                    for roll in user_rolls {
-                        println!("HISTORY: {} = {}", author, roll);
-                    }
-                }
-                None => (),
-            }
         } else if msg.content.starts_with(HISTORY_COMMAND) {
             history_command(&ctx, &msg).await;
         }
@@ -93,26 +101,6 @@ impl EventHandler for Handler {
 
     async fn ready(&self, _: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
-    }
-}
-
-async fn history_command(ctx: &Context, msg: &Message) {
-    let author = &msg.author.name;
-    let data = ctx.data.read().await;
-    let history = data.get::<RollHistory>().unwrap();
-    let entry = history.get(author);
-    match entry {
-        Some(user_rolls) => {
-            let mut response = String::from("```yaml\n");
-            for (pos, roll) in user_rolls.iter().enumerate() {
-                response.push_str(format!("{}: {}\n", pos + 1, roll).as_str());
-            }
-            response.push_str("```");
-            if let Err(why) = &msg.channel_id.say(&ctx.http, response).await {
-                println!("Error sending message: {:?}", why);
-            }
-        }
-        None => (),
     }
 }
 
