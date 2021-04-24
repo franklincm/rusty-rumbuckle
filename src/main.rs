@@ -24,10 +24,16 @@ impl TypeMapKey for RollHistory {
 async fn reg(ctx: &Context, name: &String, expr: &String) {
     let mut data = ctx.data.write().await;
     let history = data.get_mut::<RollHistory>().unwrap();
-    let entry = history
-        .entry(name.to_string())
-        .or_insert(Vec::new());
-    entry.push(String::from(expr));
+    let entry = history.entry(name.to_string()).or_insert(Vec::new());
+
+    if entry.len() < 10 {
+        entry.push(String::from(expr));
+    } else {
+        while entry.len() >= 10 {
+            entry.remove(0);
+        }
+        entry.push(String::from(expr));
+    }
 }
 
 struct Handler;
@@ -46,8 +52,6 @@ impl EventHandler for Handler {
             let input_str = String::from(content[1]);
             println!("{} : {}", author, input_str);
 
-            reg(&ctx, &author, &input_str).await;
-
             let result = eval(&input_str);
             match result {
                 Ok(s) => {
@@ -60,6 +64,8 @@ impl EventHandler for Handler {
                     if let Err(why) = msg.channel_id.say(&ctx.http, response).await {
                         println!("Error sending message: {:?}", why);
                     }
+
+                    reg(&ctx, &author, &input_str).await;
                 }
                 Err(_) => {
                     if let Err(why) = msg.channel_id.say(&ctx.http, "nah").await {
@@ -72,7 +78,11 @@ impl EventHandler for Handler {
             let history = data.get::<RollHistory>().unwrap();
             let entry = history.get(&author);
             match entry {
-                Some(lookup) => println!("HISTORY: {} = {}", author, lookup[0]),
+                Some(user_rolls) => {
+                    for roll in user_rolls {
+                        println!("HISTORY: {} = {}", author, roll);
+                    }
+                }
                 None => (),
             }
         }
