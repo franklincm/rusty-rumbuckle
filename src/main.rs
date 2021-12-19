@@ -22,10 +22,10 @@ impl TypeMapKey for RollHistory {
     type Value = HashMap<String, Vec<String>>;
 }
 
-async fn reg(ctx: &Context, name: &String, expr: &String) {
+async fn reg(ctx: &Context, name: &str, expr: &str) {
     let mut data = ctx.data.write().await;
     let history = data.get_mut::<RollHistory>().unwrap();
-    let entry = history.entry(name.to_string()).or_insert(Vec::new());
+    let entry = history.entry(name.to_string()).or_insert_with(Vec::new);
 
     if entry.len() < 10 {
         entry.push(String::from(expr));
@@ -42,18 +42,12 @@ async fn history_command(ctx: &Context, msg: &Message) {
     let data = ctx.data.read().await;
     let history = data.get::<RollHistory>().unwrap();
     let entry = history.get(author);
-    match entry {
-        Some(user_rolls) => {
-            let mut response = String::from("```yaml\n");
-            for (pos, roll) in user_rolls.iter().enumerate() {
-                response.push_str(format!("{}: {}\n", pos + 1, roll).as_str());
-            }
-            response.push_str("```");
-            if let Err(why) = &msg.channel_id.say(&ctx.http, response).await {
-                println!("Error sending message: {:?}", why);
-            }
+    if let Some(user_rolls) = entry {
+        let mut response = String::from("```yaml\n");
+        for (pos, roll) in user_rolls.iter().enumerate() {
+            response.push_str(format!("{}:{}\n", pos + 1, roll).as_str());
         }
-        None => (),
+        response.push_str("```");
     }
 }
 
