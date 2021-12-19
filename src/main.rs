@@ -48,13 +48,16 @@ async fn history_command(ctx: &Context, msg: &Message) {
         let content = msg.content.replace(HISTORY_COMMAND, "").replace(" ", "");
         let index:i32 = content.parse::<i32>().unwrap_or(-1);
 
-        if index >= 0 && index <= user_rolls.len().try_into().unwrap() {
+        if index > 0 && index <= user_rolls.len().try_into().unwrap() {
             let result = eval(&user_rolls[(index - 1) as usize]);
             match result {
-                Ok(s) => {
+                Ok(mut s) => {
                     let mut response = String::from("```yaml\n");
+                    s.sort_by_key(|r| r.str.len());
+                    s.reverse();
+                    let max_expr = s[0].str.len();
                     for res in s {
-                        response.push_str(format!("{} = {}\n", res.str, res.value).as_str());
+                        response.push_str(format!("{:<width$} = {}\n", res.str, res.value, width=max_expr).as_str());
                     }
                     response.push_str("```");
 
@@ -100,10 +103,13 @@ impl EventHandler for Handler {
 
             let result = eval(&input_str);
             match result {
-                Ok(s) => {
+                Ok(mut s) => {
                     let mut response = String::from("```yaml\n");
+                    s.sort_by_key(|r| r.str.len());
+                    s.reverse();
+                    let max_expr = s[0].str.len();
                     for res in s {
-                        response.push_str(format!("{} = {}\n", res.str, res.value).as_str());
+                        response.push_str(format!("{:<width$} = {}\n", res.str, res.value, width=max_expr).as_str());
                     }
                     response.push_str("```");
 
