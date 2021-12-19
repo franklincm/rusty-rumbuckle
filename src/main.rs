@@ -10,7 +10,27 @@ use serenity::{
 };
 
 const HELP_MESSAGE: &str = "
-bah humbug...
+Examples:
+```
+1d20 + 4 + min([2d4-MAX], 3)
+
+max(10, 1d20 + 4) # evaluate 2 simple_expressions, return max value
+min(2d20, 15)
+
+max(10, max(1d10, 1d20))
+
+[4d6 - MIN] # roll 4 six-sided dice, subtract the lowest value
+[4d6 - MAX] # roll 4 six-sided dice, subtract the highest value
+
+# Advantage
+[2d20 - MIN] + 2
+
+# Disadvantage
+[2d20 - MAX] + 2
+
+# Repeats
+[2d20 - MIN] + min(3,2d4) {4}
+```
 ";
 
 const HELP_COMMAND: &str = "!rusty";
