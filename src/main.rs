@@ -1,5 +1,6 @@
 use dicer::eval;
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::env;
 
 use serenity::{
@@ -43,11 +44,41 @@ async fn history_command(ctx: &Context, msg: &Message) {
     let history = data.get::<RollHistory>().unwrap();
     let entry = history.get(author);
     if let Some(user_rolls) = entry {
+
+        let content = msg.content.replace(HISTORY_COMMAND, "").replace(" ", "");
+        let index:i32 = content.parse::<i32>().unwrap_or(-1);
+
+        if index >= 0 && index <= user_rolls.len().try_into().unwrap() {
+            let result = eval(&user_rolls[(index - 1) as usize]);
+            match result {
+                Ok(s) => {
+                    let mut response = String::from("```yaml\n");
+                    for res in s {
+                        response.push_str(format!("{} = {}\n", res.str, res.value).as_str());
+                    }
+                    response.push_str("```");
+
+                    if let Err(why) = msg.channel_id.say(&ctx.http, response).await {
+                        println!("Error sending message: {:?}", why);
+                    }
+                    return
+                }
+                Err(_) => {
+                    if let Err(why) = msg.channel_id.say(&ctx.http, "nah").await {
+                        println!("Error sending message: {:?}", why);
+                    }
+                }
+            }
+        }
+
         let mut response = String::from("```yaml\n");
         for (pos, roll) in user_rolls.iter().enumerate() {
             response.push_str(format!("{}:{}\n", pos + 1, roll).as_str());
         }
         response.push_str("```");
+        if let Err(why) = msg.channel_id.say(&ctx.http, response).await {
+            println!("Error sending message: {:?}", why);
+        }
     }
 }
 
