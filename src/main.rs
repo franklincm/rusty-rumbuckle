@@ -64,9 +64,8 @@ async fn history_command(ctx: &Context, msg: &Message) {
     let history = data.get::<RollHistory>().unwrap();
     let entry = history.get(author);
     if let Some(user_rolls) = entry {
-
         let content = msg.content.replace(HISTORY_COMMAND, "").replace(" ", "");
-        let index:i32 = content.parse::<i32>().unwrap_or(-1);
+        let index: i32 = content.parse::<i32>().unwrap_or(-1);
 
         if index > 0 && index <= user_rolls.len().try_into().unwrap() {
             let result = eval(&user_rolls[(index - 1) as usize]);
@@ -77,14 +76,23 @@ async fn history_command(ctx: &Context, msg: &Message) {
                     s.reverse();
                     let max_expr = s[0].str.len();
                     for res in s {
-                        response.push_str(format!("{:<width$} = {}\n", res.str, res.value, width=max_expr).as_str());
+                        if res.str.contains("count") {
+                            response.push_str(
+                                format!("{:<width$}\n", res.str, width = max_expr).as_str(),
+                            );
+                        } else {
+                            response.push_str(
+                                format!("{:<width$} = {}\n", res.str, res.value, width = max_expr)
+                                    .as_str(),
+                            );
+                        }
                     }
                     response.push_str("```");
 
                     if let Err(why) = msg.channel_id.say(&ctx.http, response).await {
                         println!("Error sending message: {:?}", why);
                     }
-                    return
+                    return;
                 }
                 Err(_) => {
                     if let Err(why) = msg.channel_id.say(&ctx.http, "nah").await {
@@ -129,7 +137,16 @@ impl EventHandler for Handler {
                     s.reverse();
                     let max_expr = s[0].str.len();
                     for res in s {
-                        response.push_str(format!("{:<width$} = {}\n", res.str, res.value, width=max_expr).as_str());
+                        if res.str.contains("count") {
+                            response.push_str(
+                                format!("{:<width$}\n", res.str, width = max_expr).as_str(),
+                            );
+                        } else {
+                            response.push_str(
+                                format!("{:<width$} = {}\n", res.str, res.value, width = max_expr)
+                                    .as_str(),
+                            );
+                        }
                     }
                     response.push_str("```");
 
